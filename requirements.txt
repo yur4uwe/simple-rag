@@ -1,0 +1,18 @@
+# Core LangChain Framework
+langchain>=0.1.13
+langchain-community>=0.0.29
+
+# LLM Integrations (Uncomment the one you plan to use)
+langchain-google-genai>=1.0.1
+# langchain-openai>=0.1.1
+
+# Vector Store and Embeddings
+chromadb>=0.4.24
+sentence-transformers>=2.6.1
+
+# Document Ingestion and Utilities
+pypdf>=4.1.0
+tiktoken>=0.6.0
+
+# Environment Management
+python-dotenv>=1.0.1

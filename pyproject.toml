@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag"
+version = "0.1.0"
+description = "A local Retrieval-Augmented Generation (RAG) pipeline."
+authors = [
+    { name = "Your Name", email = "your.email@college.edu" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "langchain>=0.1.13",
+    "langchain-community>=0.0.29",
+    "langchain-google-genai>=1.0.1",
+    "chromadb>=0.4.24",
+    "sentence-transformers>=2.6.1",
+    "python-dotenv>=1.0.1",
+    "pypdf>=4.1.0",
+    "tiktoken>=0.6.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.1",
+    "black>=24.3.0",
+    "ruff>=0.3.4"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 88
