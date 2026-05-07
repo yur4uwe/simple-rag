@@ -2,6 +2,9 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+exclude = ["data*", "chroma_db*"]
+
 [project]
 name = "rag"
 version = "0.1.0"
@@ -15,7 +18,9 @@ dependencies = [
     "langchain>=0.1.13",
     "langchain-community>=0.0.29",
     "langchain-google-genai>=1.0.1",
-    "chromadb>=0.4.24",
+    "langchain-openai>=0.1.0",
+    "langchain-huggingface>=0.0.1",
+    "langchain-chroma>=0.1.0",
     "sentence-transformers>=2.6.1",
     "python-dotenv>=1.0.1",
     "pypdf>=4.1.0",
@@ -25,7 +30,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.1.1",
-    "black>=24.3.0",
     "ruff>=0.3.4"
 ]
 

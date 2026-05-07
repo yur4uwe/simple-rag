@@ -26,3 +26,5 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+data/*
+chroma_db/*
