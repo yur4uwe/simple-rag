@@ -15,9 +15,10 @@ _ = load_dotenv()
 CHROMA_DIR = "./chroma_db"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-# Define our specialized prompts
-PROMPTS = {
-    "default": """Use the following context to answer the question concisely. 
+# Define our specialized prompts in a unified structure
+SYS_PROMPTS = {
+    "rag": {
+        "default": """Use the following context to answer the question concisely. 
 If you don't know, say so. Max 3 sentences.
 
 Context: {context}
@@ -25,7 +26,7 @@ Context: {context}
 Question: {question}
 
 Answer:""",
-    "coder": """You are an htmx expert. Use the documentation and examples provided 
+        "coder": """You are an htmx expert. Use the documentation and examples provided 
 to write idiomatic htmx code that follows hypermedia principles.
 
 Context (Documentation & Examples):
@@ -43,6 +44,28 @@ Requirements:
 2. Explain briefly how the request/response flow works (e.g. "The backend receives a POST body with key=value").
 
 htmx Solution:""",
+    },
+    "no_rag": {
+        "default": """Answer the question concisely. 
+If you don't know, say so. Max 3 sentences.
+
+Question: {question}
+
+Answer:""",
+        "coder": """You are an htmx expert. Write idiomatic htmx code that follows hypermedia principles.
+
+Task: {question}
+
+RELEVANCE GUARD:
+- If the task asks for a 'simple', 'basic', or 'common' example, prioritize standard htmx attributes (hx-get, hx-post, hx-target, hx-swap).
+- Always include the 'name' attribute on input elements so the backend can actually receive the data.
+
+Requirements:
+1. Provide the HTML code with htmx attributes.
+2. Explain briefly how the request/response flow works (e.g. "The backend receives a POST body with key=value").
+
+htmx Solution:""",
+    },
 }
 
 
@@ -54,11 +77,12 @@ def get_chain(mode: str, model_name: str, api_key: str, use_rag: bool = True):  
         temperature=0.2 if mode == "coder" else 0,
     )
 
+    rag_key = "rag" if use_rag else "no_rag"
+    template = SYS_PROMPTS[rag_key].get(mode, SYS_PROMPTS[rag_key]["default"])
+
     if not use_rag:
-        # Simple prompt | llm chain for no-rag mode
-        prompt = PromptTemplate.from_template(
-            "Answer this question concisely: {question}"
-        )
+        # Baseline prompt chain
+        prompt = PromptTemplate.from_template(template)
         return prompt | llm  # pyright: ignore[reportUnknownVariableType]
 
     # RAG Setup
@@ -71,7 +95,6 @@ def get_chain(mode: str, model_name: str, api_key: str, use_rag: bool = True):  
 
     db = Chroma(persist_directory=CHROMA_DIR, embedding_function=embeddings)
 
-    template = PROMPTS.get(mode, PROMPTS["default"])
     qa_prompt = PromptTemplate(
         input_variables=["context", "question"], template=template
     )
@@ -88,9 +111,14 @@ def main():
     parser = argparse.ArgumentParser(description="Unified htmx RAG System")
     _ = parser.add_argument(
         "--mode",
-        choices=["default", "coder", "no-rag"],
+        choices=["default", "coder"],
         default="default",
-        help="Choose between general Q&A, coding assistance, or baseline (no-RAG)",
+        help="Choose between general Q&A or coding assistance",
+    )
+    _ = parser.add_argument(
+        "--no-rag",
+        action="store_true",
+        help="Disable RAG and use baseline prompts",
     )
     _ = parser.add_argument(
         "--model", default="openrouter/free", help="The OpenRouter model ID to use"
@@ -107,26 +135,27 @@ def main():
             args.mode,  # pyright: ignore[reportAny]
             args.model,  # pyright: ignore[reportAny]
             api_key,
-            use_rag=(args.mode != "no-rag"),  # pyright: ignore[reportAny]
+            use_rag=(not args.no_rag),  # pyright: ignore[reportAny]
         )
     except Exception as e:
         print(f"Initialization Error: {e}")
         return
 
-    print(f"\n--- htmx RAG: {args.mode.upper()} mode ---")  # pyright: ignore[reportAny]
+    mode_label = f"{args.mode.upper()} (NO-RAG)" if args.no_rag else args.mode.upper()  # pyright: ignore[reportAny]
+    print(f"\n--- htmx RAG: {mode_label} ---")
     print(f"Model: {args.model}")  # pyright: ignore[reportAny]
     print("Type 'exit' or 'quit' to stop.")
 
     while True:
         try:
-            query = input(f"\n[{args.mode}] Query: ").strip()
+            query = input(f"[{args.mode}] Query: ").strip()  # pyright: ignore[reportAny]
             if query.lower() in ["exit", "quit"]:
                 break
             if not query:
                 continue
 
             print("Thinking...")
-            if args.mode == "no-rag":
+            if args.no_rag:
                 res = chain.invoke({"question": query})  # pyright: ignore[reportUnknownMemberType]
                 print("\nAnswer:", res.content)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
             else:
